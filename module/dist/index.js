@@ -146,33 +146,36 @@ function useLanguageSwitcherIsActive(currentLang) {
  * In case there is no entry for this key, it returns the key.
  * @returns t(key: string): any function
  */
-const useTranslation = () => {
+const useTranslation = (lang) => {
     router.useRouter();
     let i18nObj;
     i18nObj = i18n();
     const translations = i18nObj.translations;
-    i18nObj.defaultLang;
-    const { lang } = useSelectedLanguage();
+    const defaultLang = i18nObj.defaultLang;
+    const language = lang || useSelectedLanguage().lang || defaultLang;
     // const [lang] = useSelectedLanguage();
+    /**
+     * Returns the value stored for this given key (e.g. "i18n.ui.headline")  in the translation file.
+     * The return value can be a string, a number, an array or an object.
+     * In case there is no entry for this key, it returns the key.
+     * @param key the key for looking up the translation
+     * @param view the mustache view for interpolating the template string
+     * @returns the value stored for this key, could be a string, a number, an array or an object
+     */
+    const translation = React.useCallback((key, view) => {
+        let value = key
+            .split(".")
+            .reduce((previous, current) => (previous && previous[current]) || null, translations[language]);
+        let translation = value || key;
+        try {
+            return Mustache__default["default"].render(translation, view);
+        }
+        catch (e) {
+            return translation;
+        }
+    }, [language]);
     return {
-        /**
-         * Returns the value stored for this given key (e.g. "i18n.ui.headline")  in the translation file.
-         * The return value can be a string, a number, an array or an object.
-         * In case there is no entry for this key, it returns the key.
-         * @param key the key for looking up the translation
-         * @param view the mustache view for interpolating the template string
-         * @returns the value stored for this key, could be a string, a number, an array or an object
-         */
-        t: (key, view) => {
-            let value = key.split('.').reduce((previous, current) => (previous && previous[current]) || null, translations[lang]);
-            let translation = value || key;
-            try {
-                return Mustache__default["default"].render(translation, view);
-            }
-            catch (e) {
-                return translation;
-            }
-        },
+        t: translation,
     };
 };
 
